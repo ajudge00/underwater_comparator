@@ -7,7 +7,7 @@ import imutils
 import cv2
 import sys
 
-from wb_comps import comp_for_channel
+from wb_comps import comp_for_channel, gray_world
 from gamma_comps import gamma_correction
 from sharpening import unsharp_mask
 
@@ -84,6 +84,7 @@ class UI(QMainWindow):
         if self.check_wb.isChecked():
             img_proc = comp_for_channel('red', img_norm, alpha=self.alpha_red)
             img_proc = comp_for_channel('blue', img_proc, alpha=self.alpha_blue)
+            img_proc = gray_world(img_proc)
             process_text += f"WB Red: {self.alpha_red}, WB Blue: {self.alpha_blue}\n"
 
         # GAMMA
@@ -96,6 +97,7 @@ class UI(QMainWindow):
             img_proc = unsharp_mask(img_proc, self.sigma, self.strength)
             process_text += f"Sharpening: sigma={self.sigma} strength={self.strength}"
 
+        print(process_text)
         self.make_display_img(img_proc, 'right')
 
     def set_alpha_red(self, value):
