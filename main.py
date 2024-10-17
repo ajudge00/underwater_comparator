@@ -24,7 +24,7 @@ class UI(QMainWindow):
         self.button_load = self.findChild(QPushButton, "button_load")
         self.button_process = self.findChild(QPushButton, "button_process")
         self.button_save = self.findChild(QPushButton, "button_save")
-        self.combo_show_right = self.findChild(QComboBox, "combo_show_right")
+        self.combo_result = self.findChild(QComboBox, "combo_show_right")
 
         self.slider_alpha_red = self.findChild(QSlider, "slider_alpha_red")
         self.slider_alpha_blue = self.findChild(QSlider, "slider_alpha_blue")
@@ -34,7 +34,6 @@ class UI(QMainWindow):
 
         self.label_alpha_red = self.findChild(QLabel, "label_alpha_red")
         self.label_alpha_blue = self.findChild(QLabel, "label_alpha_blue")
-        # self.spinner_alpha_blue = self.findChild(QDoubleSpinBox, "spinner_alpha_blue")
         self.label_gamma = self.findChild(QLabel, "label_gamma")
         self.label_sigma = self.findChild(QLabel, "label_sigma")
         self.label_strength = self.findChild(QLabel, "label_strength")
@@ -67,16 +66,15 @@ class UI(QMainWindow):
         self.slider_gamma.valueChanged.connect(self.set_gamma)
         self.slider_sigma.valueChanged.connect(self.set_sigma)
         self.slider_strength.valueChanged.connect(self.set_strength)
-        # self.spinner_alpha_blue.valueChanged.connect(self.set_alpha_blue_spinner)
 
         self.check_wb_precomp.stateChanged.connect(
-            lambda: self.change_combo_result("wbpc", self.check_wb_precomp.isChecked())
+            lambda: self.change_result_combo("wbpc", self.check_wb_precomp.isChecked())
         )
         self.check_wb.stateChanged.connect(
-            lambda: self.change_combo_result("wb", self.check_wb.isChecked())
+            lambda: self.change_result_combo("wb", self.check_wb.isChecked())
         )
         self.check_gamma_sharp_msf.stateChanged.connect(
-            lambda: self.change_combo_result("gsmsf", self.check_gamma_sharp_msf.isChecked())
+            lambda: self.change_result_combo("gsmsf", self.check_gamma_sharp_msf.isChecked())
         )
 
         self.view_choices = {
@@ -105,7 +103,6 @@ class UI(QMainWindow):
         self.original_choice_groups = list(self.view_choices.keys())
         self.current_choice_groups = self.original_choice_groups.copy()
         self.build_result_combo()
-        self.combo_show_right.setCurrentIndex(len(self.view_choices_flattened) - 1)
 
         self.show()
 
@@ -179,7 +176,7 @@ class UI(QMainWindow):
         new_value = str(self.slider_strength.value() / 10.0)
         self.label_strength.setText(new_value)
 
-    def change_combo_result(self, choice: str, checked: bool):
+    def change_result_combo(self, choice: str, checked: bool):
         if checked:
             i = self.original_choice_groups.index(choice)
             self.current_choice_groups.insert(i, choice)
@@ -189,9 +186,11 @@ class UI(QMainWindow):
         self.build_result_combo()
 
     def build_result_combo(self):
-        self.combo_show_right.clear()
+        self.combo_result.clear()
         for group in self.current_choice_groups:
-            self.combo_show_right.addItems(self.view_choices[group])
+            self.combo_result.addItems(self.view_choices[group])
+
+        self.combo_result.setCurrentIndex(self.combo_result.count() - 1)
 
     def make_display_img(self, img, side):
         if img.dtype == np.float32:
