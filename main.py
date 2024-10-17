@@ -69,10 +69,14 @@ class UI(QMainWindow):
         self.slider_strength.valueChanged.connect(self.set_strength)
         # self.spinner_alpha_blue.valueChanged.connect(self.set_alpha_blue_spinner)
 
-        self.check_wb_precomp.stateChanged.connect(lambda: self.change_combo_result("wbpc", self.check_wb.isChecked()))
-        self.check_wb.stateChanged.connect(lambda: self.change_combo_result("wb", self.check_wb.isChecked()))
+        self.check_wb_precomp.stateChanged.connect(
+            lambda: self.change_combo_result("wbpc", self.check_wb_precomp.isChecked())
+        )
+        self.check_wb.stateChanged.connect(
+            lambda: self.change_combo_result("wb", self.check_wb.isChecked())
+        )
         self.check_gamma_sharp_msf.stateChanged.connect(
-            lambda: self.change_combo_result("gsmsf", self.check_wb.isChecked())
+            lambda: self.change_combo_result("gsmsf", self.check_gamma_sharp_msf.isChecked())
         )
 
         self.view_choices = {
@@ -91,13 +95,17 @@ class UI(QMainWindow):
             "fr": ["Final Result"]
         }
 
-        number_of_choices = 0
-        for option in self.view_choices.keys():
-            for name in self.view_choices[option]:
-                self.combo_show_right.addItem(name)
-                number_of_choices += 1
+        self.view_choices_flattened = [
+            "Original", "After White Balance Pre-comp", "After White Balance", "After Gamma", "After Sharpening",
+            "After Gamma + Sharpening", "Laplacian Contrast Weight Map (Gamma)", "Saliency Weight Map (Gamma)",
+            "Saturation Weight Map (Gamma)", "Laplacian Contrast Weight Map (Sharpening)",
+            "Saliency Weight Map (Sharpening)", "Saturation Weight Map (Sharpening)", "Final Result"
+        ]
 
-        self.combo_show_right.setCurrentIndex(number_of_choices - 1)
+        self.original_choice_groups = list(self.view_choices.keys())
+        self.current_choice_groups = self.original_choice_groups.copy()
+        self.build_result_combo()
+        self.combo_show_right.setCurrentIndex(len(self.view_choices_flattened) - 1)
 
         self.show()
 
@@ -172,7 +180,18 @@ class UI(QMainWindow):
         self.label_strength.setText(new_value)
 
     def change_combo_result(self, choice: str, checked: bool):
-        pass
+        if checked:
+            i = self.original_choice_groups.index(choice)
+            self.current_choice_groups.insert(i, choice)
+        else:
+            self.current_choice_groups.remove(choice)
+
+        self.build_result_combo()
+
+    def build_result_combo(self):
+        self.combo_show_right.clear()
+        for group in self.current_choice_groups:
+            self.combo_show_right.addItems(self.view_choices[group])
 
     def make_display_img(self, img, side):
         if img.dtype == np.float32:
