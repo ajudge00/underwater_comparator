@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QMainWindow, QApplication, QPushButton, QSlider, QLabel, QFileDialog, QCheckBox, \
-    QDoubleSpinBox
+    QDoubleSpinBox, QComboBox
 from PyQt5.QtGui import QImage
 from PyQt5 import uic, QtGui
 import numpy as np
@@ -24,6 +24,7 @@ class UI(QMainWindow):
         self.button_load = self.findChild(QPushButton, "button_load")
         self.button_process = self.findChild(QPushButton, "button_process")
         self.button_save = self.findChild(QPushButton, "button_save")
+        self.combo_show_right = self.findChild(QComboBox, "combo_show_right")
 
         self.slider_alpha_red = self.findChild(QSlider, "slider_alpha_red")
         self.slider_alpha_blue = self.findChild(QSlider, "slider_alpha_blue")
@@ -38,16 +39,20 @@ class UI(QMainWindow):
         self.label_sigma = self.findChild(QLabel, "label_sigma")
         self.label_strength = self.findChild(QLabel, "label_strength")
 
+        self.check_wb_precomp = self.findChild(QCheckBox, "check_wbpc")
         self.check_wb = self.findChild(QCheckBox, "check_wb")
-        self.check_gamma = self.findChild(QCheckBox, "check_gamma")
-        self.check_sharp = self.findChild(QCheckBox, "check_sharp")
-        self.weight = self.findChild(QLabel, "check_weight")
-        self.check_multi = self.findChild(QCheckBox, "check_multi")
+        self.check_gamma_sharp_msf = self.findChild(QCheckBox, "check_gamma_sharp_msf")
 
         # Properties
         self.filename = None
+
         self.image_original = None
-        self.image_processed = None
+        self.image_result = None
+        self.image_wb = None
+        self.image_gamma = None
+        self.image_sharp = None
+        self.image_sharp_gamma = None
+
         self.alpha_red = self.slider_alpha_red.value() / 10.0
         self.alpha_blue = self.slider_alpha_blue.value() / 10.0
         self.gamma = self.slider_gamma.value() / 10.0
@@ -64,6 +69,36 @@ class UI(QMainWindow):
         self.slider_strength.valueChanged.connect(self.set_strength)
         # self.spinner_alpha_blue.valueChanged.connect(self.set_alpha_blue_spinner)
 
+        self.check_wb_precomp.stateChanged.connect(lambda: self.change_combo_result("wbpc", self.check_wb.isChecked()))
+        self.check_wb.stateChanged.connect(lambda: self.change_combo_result("wb", self.check_wb.isChecked()))
+        self.check_gamma_sharp_msf.stateChanged.connect(
+            lambda: self.change_combo_result("gsmsf", self.check_wb.isChecked())
+        )
+
+        self.view_choices = {
+            "original": ["Original"],
+            "wbpc": ["After White Balance Pre-comp"],
+            "wb": ["After White Balance"],
+            "gsmsf": ["After Gamma",
+                      "After Sharpening",
+                      "After Gamma + Sharpening",
+                      "Laplacian Contrast Weight Map (Gamma)",
+                      "Saliency Weight Map (Gamma)",
+                      "Saturation Weight Map (Gamma)",
+                      "Laplacian Contrast Weight Map (Sharpening)",
+                      "Saliency Weight Map (Sharpening)",
+                      "Saturation Weight Map (Sharpening)"],
+            "fr": ["Final Result"]
+        }
+
+        number_of_choices = 0
+        for option in self.view_choices.keys():
+            for name in self.view_choices[option]:
+                self.combo_show_right.addItem(name)
+                number_of_choices += 1
+
+        self.combo_show_right.setCurrentIndex(number_of_choices - 1)
+
         self.show()
 
     def load_image(self):
@@ -75,30 +110,33 @@ class UI(QMainWindow):
             print("Nem lett kép kiválasztva, vagy egyéb hiba.")
 
     def process_image(self):
+        if self.image_original is None:
+            return
+
         img_norm = cv2.normalize(self.image_original, None, 0.0, 1.0, cv2.NORM_MINMAX, dtype=cv2.CV_32F)
         img_proc = img_norm.copy()
 
         process_text = "Process:\n"
 
         # WHITE BALANCE
-        if self.check_wb.isChecked():
+        if self.check_wb_precomp.isChecked():
             img_proc = comp_for_channel('red', img_norm, alpha=self.alpha_red)
             img_proc = comp_for_channel('blue', img_proc, alpha=self.alpha_blue)
+
+        if self.check_wb.isChecked():
             img_proc = gray_world(img_proc)
             process_text += f"WB Red: {self.alpha_red}, WB Blue: {self.alpha_blue}\n"
 
-        # GAMMA
-        if self.check_gamma.isChecked():
+        # GAMMA and SHARPENING
+        if self.check_gamma_sharp_msf.isChecked():
             img_proc = gamma_correction(img_proc, self.gamma)
             process_text += f"Gamma: {self.gamma}"
-
-        # SHARPENING
-        elif self.check_sharp.isChecked():
             img_proc = unsharp_mask(img_proc, self.sigma, self.strength)
             process_text += f"Sharpening: sigma={self.sigma} strength={self.strength}"
 
         print(process_text)
-        self.make_display_img(img_proc, 'right')
+        self.image_result = img_proc
+        self.make_display_img(self.image_result, 'right')
 
     def set_alpha_red(self, value):
         # Property
@@ -132,6 +170,9 @@ class UI(QMainWindow):
         self.strength = value / 10.0
         new_value = str(self.slider_strength.value() / 10.0)
         self.label_strength.setText(new_value)
+
+    def change_combo_result(self, choice: str, checked: bool):
+        pass
 
     def make_display_img(self, img, side):
         if img.dtype == np.float32:

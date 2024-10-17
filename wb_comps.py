@@ -23,8 +23,6 @@ def comp_for_channel(channel: str, img: np.ndarray, alpha=1):
     elif channel == 'blue' or channel == 'b':
         res[:, :, 0] = img[:, :, 0] + alpha * (avg_g - avg_b) * (1 - img[:, :, 0]) * img[:, :, 1]
 
-    # EZUTÁN KELL A CONVENTIONAL GRAY WORLD ALGO
-
     return res
 
 
