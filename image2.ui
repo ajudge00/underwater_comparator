@@ -543,7 +543,7 @@
              <attribute name="title">
               <string>White Balance</string>
              </attribute>
-             <layout class="QGridLayout" name="gridLayout_2" rowstretch="2,2,1,2,2,1,2,2,0,0,0" columnstretch="0,0,0,0,0,10,0,5">
+             <layout class="QGridLayout" name="gridLayout_2" rowstretch="2,2,1,2,2,1,2,2" columnstretch="0,0,0,0,0,10,0,5">
               <item row="7" column="6">
                <widget class="QLabel" name="label_8">
                 <property name="text">
@@ -1048,9 +1048,12 @@
                </widget>
               </item>
               <item row="2" column="0">
-               <widget class="QCheckBox" name="check_g_s_msf">
+               <widget class="QCheckBox" name="check_gamma_sharp_msf">
                 <property name="text">
                  <string>2. Gamma + Sharpening -&gt; Multi-Scale Fusion</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
