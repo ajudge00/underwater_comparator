@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QMainWindow, QApplication, QPushButton, QSlider, QLabel, QFileDialog, QCheckBox, \
-    QDoubleSpinBox, QComboBox
+    QDoubleSpinBox, QComboBox, QStackedWidget
 from PyQt5.QtGui import QImage
 from PyQt5 import uic, QtGui
 import numpy as np
@@ -23,6 +23,7 @@ class GUI(QMainWindow):
         self.combo_pipeline = self.findChild(QComboBox, "combo_pipeline")
         self.combo_see_stage = self.findChild(QComboBox, "combo_see_stage")
 
+        self.stacked_pipelines = self.findChild(QStackedWidget, "stacked_pipelines")
         self.slider_wb_alpha_red = self.findChild(QSlider, "slider_wb_alpha_red")
         self.slider_wb_alpha_blue = self.findChild(QSlider, "slider_wb_alpha_blue")
         self.slider_gamma = self.findChild(QSlider, "slider_gamma")
@@ -45,7 +46,6 @@ class GUI(QMainWindow):
             "wb": ["After White Balance"],
             "gsmsf": ["After Gamma",
                       "After Sharpening",
-                      "After Gamma + Sharpening",
                       "Laplacian Contrast Weight Map (Gamma)",
                       "Saliency Weight Map (Gamma)",
                       "Saturation Weight Map (Gamma)",
@@ -57,28 +57,38 @@ class GUI(QMainWindow):
 
         self.view_choices_flattened = [
             "Original", "After White Balance Pre-comp", "After White Balance", "After Gamma", "After Sharpening",
-            "After Gamma + Sharpening", "Laplacian Contrast Weight Map (Gamma)", "Saliency Weight Map (Gamma)",
+            "Laplacian Contrast Weight Map (Gamma)", "Saliency Weight Map (Gamma)",
             "Saturation Weight Map (Gamma)", "Laplacian Contrast Weight Map (Sharpening)",
             "Saliency Weight Map (Sharpening)", "Saturation Weight Map (Sharpening)", "Final Result"
         ]
 
         self.check_wb_precomp.stateChanged.connect(
-            lambda: self.change_result_combo("wbpc", self.check_wb_precomp.isChecked())
+            lambda: self.change_combo_see_stage("wbpc", self.check_wb_precomp.isChecked())
         )
         self.check_wb.stateChanged.connect(
-            lambda: self.change_result_combo("wb", self.check_wb.isChecked())
+            lambda: self.change_combo_see_stage("wb", self.check_wb.isChecked())
         )
         self.check_gamma_sharp_msf.stateChanged.connect(
-            lambda: self.change_result_combo("gsmsf", self.check_gamma_sharp_msf.isChecked())
+            lambda: self.change_combo_see_stage("gsmsf", self.check_gamma_sharp_msf.isChecked())
         )
 
         self.original_choice_groups = list(self.view_choices.keys())
         self.current_choice_groups = self.original_choice_groups.copy()
-        self.build_result_combo()
+        self.build_combo_see_stage()
+
+        self.pipeline_choices = [
+            "Ancuti et al. 2018",
+            "Second pipeline"
+        ]
+        self.build_combo_pipeline()
+        self.combo_pipeline.currentIndexChanged.connect(self.switch_pipeline)
 
         self.show()
 
     def make_display_img(self, img, side):
+        if img is None:
+            return
+
         if img.dtype == np.float32:
             img = (img * 255).astype(np.uint8)
 
@@ -91,16 +101,24 @@ class GUI(QMainWindow):
         elif side == 'right':
             self.img_right.setPixmap(QtGui.QPixmap.fromImage(image_displayed))
 
-    def change_result_combo(self, choice: str, checked: bool):
+    def build_combo_pipeline(self):
+        self.combo_pipeline.clear()
+        self.combo_pipeline.addItems(self.pipeline_choices)
+        self.combo_pipeline.setCurrentIndex(0)
+
+    def switch_pipeline(self, value):
+        self.stacked_pipelines.setCurrentIndex(value)
+
+    def change_combo_see_stage(self, choice: str, checked: bool):
         if checked:
             i = self.original_choice_groups.index(choice)
             self.current_choice_groups.insert(i, choice)
         else:
             self.current_choice_groups.remove(choice)
 
-        self.build_result_combo()
+        self.build_combo_see_stage()
 
-    def build_result_combo(self):
+    def build_combo_see_stage(self):
         self.combo_see_stage.clear()
         for group in self.current_choice_groups:
             self.combo_see_stage.addItems(self.view_choices[group])

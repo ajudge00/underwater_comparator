@@ -504,7 +504,7 @@
     <item row="3" column="0">
      <layout class="QHBoxLayout" name="toolbox" stretch="15,3">
       <item>
-       <widget class="QStackedWidget" name="pipelines">
+       <widget class="QStackedWidget" name="stacked_pipelines">
         <property name="frameShadow">
          <enum>QFrame::Plain</enum>
         </property>
